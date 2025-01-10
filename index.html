@@ -177,10 +177,37 @@
     padding: 10px;
     border-radius: 10px;
 }
+.capturedPieces {
+    position: absolute;
+    top: 30%;
+    left: 80%;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 10px;
+    width: 150px;
+}
+
+.capturedList {
+    margin: 5px 0;
+    
+}
+
+.capturedList img {
+    width: 25px;
+    height: 25px;
+    margin-right: 5px;
+    
+    
+}
     </style>
 </head>
 <body>
     <div class="chessBoardbcak"></div>
+    <div class="capturedPieces">
+    <h2>Kiütött bábuk</h2>
+    <div id="capturedWhite" class="capturedList">Fekete:</div>
+    <div id="capturedBlack" class="capturedList">Fehér:</div>
+</div>
     <div class="chessBoard">        
         <div class="square white">
           <div class="piece rook" color="black"  >
@@ -536,7 +563,7 @@ function drag(ev) {
             boardSquaresArray
         );
 
-        // Kiemelés a lehetséges lépésekhez
+       
         highlightLegalMoves(legalSquares);
 
         let legalSquaresJson = JSON.stringify(legalSquares);
@@ -551,7 +578,6 @@ function drop(ev) {
     let legalSquaresJson = ev.dataTransfer.getData("application/json");
     let legalSquares = JSON.parse(legalSquaresJson);
 
-    // Kiemelés eltávolítása
     removeHighlight();
 
     const piece = document.getElementById(pieceId);
@@ -588,6 +614,33 @@ function drop(ev) {
         checkForCheckMate();
         return;
     }
+    
+    
+    if (
+        squareContent.pieceColor != "blank" &&
+        legalSquares.includes(destinationSquareId)
+    ) {
+        const capturedPieceColor = squareContent.pieceColor;
+        const capturedPieceType = squareContent.pieceType;
+
+        const capturedList = capturedPieceColor === "white" ? document.getElementById("capturedWhite") : document.getElementById("capturedBlack");
+        const img = document.createElement("img");
+        img.src = capturedPieceType === "pawn" ? (capturedPieceColor === "white" ? "White-Pawn.png" : "Black-Pawn.png") :
+                  capturedPieceType === "rook" ? (capturedPieceColor === "white" ? "White-Rook.png" : "Black-Rook.png") :
+                  capturedPieceType === "knight" ? (capturedPieceColor === "white" ? "White-Knight.png" : "Black-Knight.png") :
+                  capturedPieceType === "bishop" ? (capturedPieceColor === "white" ? "White-Bishop.png" : "Black-Bishop.png") :
+                  capturedPieceType === "queen" ? (capturedPieceColor === "white" ? "White-Queen.png" : "Black-Queen.png") :
+                  (capturedPieceColor === "white" ? "White-King.png" : "Black-King.png");
+        capturedList.appendChild(img);
+
+        let children = destinationSquare.children;
+        for (let i = 0; i < children.length; i++) {
+            if (!children[i].classList.contains('coordinate')) {
+                destinationSquare.removeChild(children[i]);
+            }
+        }
+    }
+    
     if (
         squareContent.pieceColor != "blank" &&
         legalSquares.includes(destinationSquareId)
@@ -892,7 +945,6 @@ function getKingMoves(startingSquareId, pieceColor, boardSquaresArray) {
     [1, 0],
   ];
 
-  //  for (let move of moves)
   moves.forEach((move) => {
     currentFile = file + move[0];
     currentRank = rankNumber + move[1];
@@ -1191,7 +1243,7 @@ function isMoveValidAgainstCheck(legalSquares,startingSquareId,pieceColor,pieceT
   legalSquaresCopy =legalSquares.slice();
   legalSquaresCopy.forEach((element) => {
     let destinationId = element;
-    //boardSquaresArrayCopy.length=0;
+    boardSquaresArrayCopy.length=0;
     boardSquaresArrayCopy = deepCopyArray(boardSquaresArray);
     updateBoardSquaresArray(
       startingSquareId,
@@ -1242,7 +1294,7 @@ function getAllPossibleMoves(squaresArray, color) {
       const { pieceColor,pieceType,pieceId } = getPieceAtSquare(square.squareId,squaresArray);
       if (pieceId === "blank") return [];
 
-      //const piece = document.getElementById(pieceId);
+      const piece = document.getElementById(pieceId);
       let squaresArrayCopy = deepCopyArray(squaresArray);
       const pieceObject ={pieceColor:pieceColor,pieceType:pieceType,pieceId:pieceId}
 
