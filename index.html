@@ -164,11 +164,23 @@
     filter: blur(10rem);
     opacity: 0.5;
 }
-
+.chessBoardbcak{
+   
+    position: absolute;
+    height: 47%;
+    width: 24.9%;
+    background-color: #00ff99;
+    top: 51%;
+    left: 50%;
+    translate: -50% -50%;
+    z-index: -0;
+    padding: 10px;
+    border-radius: 10px;
+}
     </style>
 </head>
 <body>
-    <div class="chessBoardbcak">
+    <div class="chessBoardbcak"></div>
     <div class="chessBoard">        
         <div class="square white">
           <div class="piece rook" color="black"  >
@@ -410,7 +422,7 @@
         </div>
       </div>
       <div id="alert" class="nyertel"></div>
-    </div>
+    
    <script>
        let boardSquaresArray = [];
 let isWhiteTurn = true;
@@ -506,90 +518,113 @@ function allowDrop(ev) {
   ev.preventDefault();
 }
 function drag(ev) {
-  const piece = ev.target;
-  const pieceColor = piece.getAttribute("color");
-  const pieceType =piece.classList[1];
-  const pieceId = piece.id;
+    const piece = ev.target;
+    const pieceColor = piece.getAttribute("color");
+    const pieceType = piece.classList[1];
+    const pieceId = piece.id;
 
-  if (
-    (isWhiteTurn && pieceColor == "white") ||
-    (!isWhiteTurn && pieceColor == "black")
-  ) {
-    const startingSquareId = piece.parentNode.id;
-    ev.dataTransfer.setData("text", pieceId + "|" + startingSquareId);
-    const pieceObject ={pieceColor:pieceColor,pieceType:pieceType,pieceId:pieceId}
-    let legalSquares = getPossibleMoves(
-      startingSquareId,
-      pieceObject,
-      boardSquaresArray
-    );
+    if (
+        (isWhiteTurn && pieceColor == "white") ||
+        (!isWhiteTurn && pieceColor == "black")
+    ) {
+        const startingSquareId = piece.parentNode.id;
+        ev.dataTransfer.setData("text", pieceId + "|" + startingSquareId);
+        const pieceObject = { pieceColor: pieceColor, pieceType: pieceType, pieceId: pieceId }
+        let legalSquares = getPossibleMoves(
+            startingSquareId,
+            pieceObject,
+            boardSquaresArray
+        );
 
-    let legalSquaresJson = JSON.stringify(legalSquares);
-    ev.dataTransfer.setData("application/json", legalSquaresJson);
-  }
-}
-function drop(ev) {
-  ev.preventDefault();
-  let data = ev.dataTransfer.getData("text");
-  let [pieceId, startingSquareId] = data.split("|");
-  let legalSquaresJson = ev.dataTransfer.getData("application/json");
-  let legalSquares = JSON.parse(legalSquaresJson);
+        // Kiemelés a lehetséges lépésekhez
+        highlightLegalMoves(legalSquares);
 
-  const piece = document.getElementById(pieceId);
-  const pieceColor = piece.getAttribute("color");
-  const pieceType = piece.classList[1];
-  
-  const destinationSquare = ev.currentTarget;
-  let   destinationSquareId = destinationSquare.id;
-
-  legalSquares=isMoveValidAgainstCheck(legalSquares,startingSquareId,pieceColor,pieceType);
-
-  if (pieceType == "king") {
-    let isCheck = isKingInCheck(
-      destinationSquareId,
-      pieceColor,
-      boardSquaresArray
-    );
-    if (isCheck) return;
-    isWhiteTurn  ? (whiteKingSquare=destinationSquareId) : (blackKingSquare=destinationSquareId);
-  }
-
-    let squareContent=getPieceAtSquare(destinationSquareId,boardSquaresArray);
-  if (
-     squareContent.pieceColor == "blank" &&
-     legalSquares.includes(destinationSquareId)
-  ) {
-    destinationSquare.appendChild(piece);
-    isWhiteTurn = !isWhiteTurn;
-    updateBoardSquaresArray(
-      startingSquareId,
-      destinationSquareId,
-      boardSquaresArray
-    );
-    checkForCheckMate();
-    return;
-  }
-  if (
-     squareContent.pieceColor!= "blank" &&
-     legalSquares.includes(destinationSquareId)
-  ) {
-    let children = destinationSquare.children;
-    for (let i = 0; i < children.length; i++) {
-        if (!children[i].classList.contains('coordinate')) {
-          destinationSquare.removeChild(children[i]);
-        }
+        let legalSquaresJson = JSON.stringify(legalSquares);
+        ev.dataTransfer.setData("application/json", legalSquaresJson);
     }
-   
-    destinationSquare.appendChild(piece);
-    isWhiteTurn = !isWhiteTurn;
-    updateBoardSquaresArray(
-      startingSquareId,
-      destinationSquareId,
-      boardSquaresArray
-    );
-    checkForCheckMate();
-    return;
-  }
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    let data = ev.dataTransfer.getData("text");
+    let [pieceId, startingSquareId] = data.split("|");
+    let legalSquaresJson = ev.dataTransfer.getData("application/json");
+    let legalSquares = JSON.parse(legalSquaresJson);
+
+    // Kiemelés eltávolítása
+    removeHighlight();
+
+    const piece = document.getElementById(pieceId);
+    const pieceColor = piece.getAttribute("color");
+    const pieceType = piece.classList[1];
+
+    const destinationSquare = ev.currentTarget;
+    let destinationSquareId = destinationSquare.id;
+
+    legalSquares = isMoveValidAgainstCheck(legalSquares, startingSquareId, pieceColor, pieceType);
+
+    if (pieceType == "king") {
+        let isCheck = isKingInCheck(
+            destinationSquareId,
+            pieceColor,
+            boardSquaresArray
+        );
+        if (isCheck) return;
+        isWhiteTurn ? (whiteKingSquare = destinationSquareId) : (blackKingSquare = destinationSquareId);
+    }
+
+    let squareContent = getPieceAtSquare(destinationSquareId, boardSquaresArray);
+    if (
+        squareContent.pieceColor == "blank" &&
+        legalSquares.includes(destinationSquareId)
+    ) {
+        destinationSquare.appendChild(piece);
+        isWhiteTurn = !isWhiteTurn;
+        updateBoardSquaresArray(
+            startingSquareId,
+            destinationSquareId,
+            boardSquaresArray
+        );
+        checkForCheckMate();
+        return;
+    }
+    if (
+        squareContent.pieceColor != "blank" &&
+        legalSquares.includes(destinationSquareId)
+    ) {
+        let children = destinationSquare.children;
+        for (let i = 0; i < children.length; i++) {
+            if (!children[i].classList.contains('coordinate')) {
+                destinationSquare.removeChild(children[i]);
+            }
+        }
+
+        destinationSquare.appendChild(piece);
+        isWhiteTurn = !isWhiteTurn;
+        updateBoardSquaresArray(
+            startingSquareId,
+            destinationSquareId,
+            boardSquaresArray
+        );
+        checkForCheckMate();
+        return;
+    }
+}
+
+function highlightLegalMoves(legalSquares) {
+    legalSquares.forEach(squareId => {
+        const square = document.getElementById(squareId);
+        if (square) {
+            square.style.backgroundColor = "rgba(0, 128, 0, 0.5)";
+        }
+    });
+}
+
+function removeHighlight() {
+    const squares = document.getElementsByClassName("square");
+    for (let square of squares) {
+        square.style.backgroundColor = ""; 
+    }
 }
 
 function getPossibleMoves(startingSquareId, piece, boardSquaresArray) {
